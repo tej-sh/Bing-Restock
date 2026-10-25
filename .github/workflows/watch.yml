@@ -1,0 +1,33 @@
+name: watch
+on:
+  schedule:
+    - cron: '4-59/5 * * * *'
+    - cron: '1-56/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check
+        env:
+          BING_COOKIE: ${{ secrets.BING_COOKIE }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: bash check.sh
+
+      - name: Save state
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add state/hash
+          git diff --cached --quiet || (git commit -m "state" && git push)
